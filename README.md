@@ -102,7 +102,6 @@ mancala-reinforcement-learning/
 │   ├── ...
 │   └── consistency_plot.png
 ├── ECS 170 Project Presentation.pdf
-├── ECS 170 Project Presentation.pptx
 ├── README.md
 ├── LICENSE
 └── CODE_OF_CONDUCT.md
