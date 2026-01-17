@@ -32,7 +32,7 @@ The project emphasizes:
 
 ---
 ## From Coursework to Applied Reinforcement Learning
-Developed for **ECS 170 (Artificial Intelligence), this project extends an initial Mancala reinforcement learning implementation adapted from [this repository](https://github.com/mkgray/mancala-reinforcement-learning).
+Developed for **ECS 170 (Artificial Intelligence)**, this project extends an initial Mancala reinforcement learning implementation adapted from [this repository](https://github.com/mkgray/mancala-reinforcement-learning).
 
 ### Initial Scaffolding
 - Terminal-based Mancala game engine
