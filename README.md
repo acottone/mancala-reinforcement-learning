@@ -1,242 +1,316 @@
 # Mancala Reinforcement Learning
 
-Designing, training, and evaluating a reinforcement learning agent for the game of **Mancala** using Q-learning with hybrid exploration strategies and dynamic parameter decay.
+An experimental reinforcement learning study of the game **Mancala**, focused on reward shaping, exploration strategies, and state-space reduction for improved policy learning.
 
-## Overview
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white)
+![Matplotlib](https://img.shields.io/badge/Matplotlib-%23ffffff.svg?style=for-the-badge&logo=Matplotlib&logoColor=black)
 
-This project implements a Mancala game environment with a reinforcement learning agent trained using Q-learning. The agent employs an advanced action selection strategy combining softmax and epsilon-greedy methods, along with dynamic parameter decay for epsilon, alpha (learning rate), and temperature.
+---
 
-**Key Highlights:**
-- Advanced Q-learning with hybrid action selection
-- Comprehensive training analysis across multiple runs
-- Interactive gameplay against trained AI
-- Performance visualization and consistency metrics
-- Model persistence for iterative training
+## TL;DR
+- Built and iteratively improved a reinforcement learning agent for Mancala
+- Increased win rate from ~30% (baseline) to **72.59%** through systematic experimentation
+- Demonstrated that **state aggregation and reward design** dominate raw algorithmic complexity
+- Evaluated epsilon decay, alpha decay, softmax exploration, Double Q-learning, and reward scaling
+- Identified tradeoffs between convergence speed, stability, and policy consistency
 
-## Features
+---
 
-### Game Modes
-- **Human vs Human**: Classic two-player Mancala
-- **Human vs AI**: Play against the trained reinforcement learning agent
-- **AI Training Mode**: Self-play for agent training
+## Project Overview
 
-### Advanced RL Implementation
-- **Hybrid Action Selection**: Combines softmax and epsilon-greedy strategies
-- **Parameter Decay**: Dynamic decay for epsilon, alpha, and temperature
-- **Sophisticated Reward System**:
-  - +2 points per marble gained in player's mancala
-  - +10 points per stone captured from opponent
-  - +1000 points for winning the game
-  - -1000 points for losing the game
-- **State Space Representation**: Efficient board state encoding
-- **Model Persistence**: Save and load trained agents via pickle
+This project applies **reinforcement learning** to the game of Mancala to study how learning dynamics are affected by reward design, exploration strategies, and state-space complexity.
 
-### Training Features
-- Multiple training runs for consistency analysis
-- Checkpoint saving every 25,000 games
-- Moving average and win rate visualization
-- Cross-run consistency plots
-- Configurable hyperparameters
+Starting from a basic Q-learning agent with poor performance, the project incrementally introduces methodological improvements and evaluates their impact on learning outcomes. The goal is not only to win games, but to understand **why certain RL design choices succeed or fail** in practice.
 
-## Installation
+The project emphasizes:
+- Reward signal engineering
+- Exploration–exploitation tradeoffs
+- Bias and variance in Q-learning
+- State-space reduction via abstraction
+- Empirical evaluation across multiple training runs
 
-### Prerequisites
+---
+## From Coursework to Applied Reinforcement Learning
+Developed for **ECS 170 (Artificial Intelligence), this project extends an initial Mancala reinforcement learning implementation adapted from [this repository](https://github.com/mkgray/mancala-reinforcement-learning).
+
+### Initial Scaffolding
+- Terminal-based Mancala game engine
+- Support for 0, 1, or 2 human players
+- Pretrained Q-learning agent
+- Training against a **random action-selection opponent**
+- 100,000-game baseline training run
+
+### Original Baseline Model
+- Tabular Q-learning
+- Fixed epsilon-greedy exploration
+- Sparse reward signal
+- Evaluation metric:
+  - Win = 1
+  - Draw = 0
+  - Loss = -1
+
+#### Baseline Performance
+- ~30% average win rate
+- No convergence toward strategic play
+- High variance across runs
+
+This baseline served as a control for all subsequent experiments.
+
+---
+## Key Findings
+
+### Learning Dynamics
+- Reward density is the single most important factor in early learning
+- Exploration scheduling (epsilon decay) improves stability and convergence
+- Naive reward shaping can degrade performance if poorly aligned
+- State abstraction dramatically outperforms algorithmic complexity alone
+
+### Exploration & Stability
+- Fixed epsilon-greedy exploration leads to premature convergence
+- Decaying epsilon avoids suboptimal early policies
+- Softmax exploration improves action selection quality but increases computational cost
+- Hybrid strategies balance efficiency and performance
+
+### Performance Summary
+
+| Model Variant                              | Avg Win Rate |
+|-------------------------------------------|--------------|
+| Baseline Q-learning                       | ~30%         |
+| Reward-adjusted baseline                  | 47.52%       |
+| Potential-based shaping                  | 35.04%       |
+| Epsilon decay                             | 49.66%       |
+| Alpha decay                               | 43.30%       |
+| Softmax + ε-greedy                        | 45.22%       |
+| Double Q-learning                        | 46.29%       |
+| **State aggregation + hybrid exploration** | **72.59%**   |
+
+---
+
+## Technical Implementation
+
+### Core Algorithm: Q-Learning
+The agent uses temporal difference Q-learning:
+```
+Q(s, a) ← Q(s, a) + α [ r + γ max Q(s′, a′) − Q(s, a) ]
+```
+
+Where:
+- `s, s'` are board states
+- `a` is a legal move
+- `r` is the shaped reward
+- `α` is the learning rate
+- `γ` is the discount factor
+
+---
+
+## Key Technical Decisions
+
+### 1. Reward Engineering
+
+#### Initial Reward System
+- Reward = total marbles at game end
+- Resulted in sparse feedback and poor learning
+
+#### Revised Reward System
+- +1000 for winning
+- -1000 for losing
+- +5 per marble captured
+- +2 per marble gained at end of turn
+
+#### Result:
+- Win rate increased to **47.52%**
+
+### 2. Potential-Based Reward Shaping
+Reward shaping introduced heuristic-based transition rewards:
+- Increasing agent vs opponent store difference
+- Adding stones to agent store
+- Removing stones from opponent pockets
+- Gaining extra turns
+- Leaving opponent pockets empty
+
+#### Outcome:
+- Average win rate decreased to **35.04%**
+- Excessive shaping introduced noisy learning signals
+
+### 3. Exploration Scheduling (Epsilon Decay)
+- Initial ε = 1.0
+- Minimum ε = 0.05
+- Gradual decay over training
+
+#### Result:
+- Average win rate improved to **49.66%**
+- Reduced premature convergence
+
+### 4. Learning Rate Scheduling (Alpha Decay)
+- Initial α = 0.4
+- Minimum α = 0.01
+- Decay factor =~0.999
+
+#### Result:
+-  Average win rate: **43.3%**
+-  Improved convergence, reduced adaptability
+
+### 5. Action Selection Strategies
+
+#### Softmax Exploration
+- Probabilistic action selection based on Q-values
+- Controlled by temperature parameter
+- Computationally expensive
+
+#### Hybrid Softmax + Epsilon-Greedy
+- Random action with probability ε
+- Softmax otherwise
+- Reduced computational cost
+
+#### Result:
+- Win rate: **45.22%**
+- No significant improvement over epsilon decay alone
+
+### 6. Bias Reduction: Double Q-Learning
+- Introduced a second Q-table
+- Randomly selected estimator per update
+
+#### Result:
+- Win rate: **46.29%**
+- Zero initialization limited early exploration
+
+### 7. State Aggregation (Most Impactful Improvement)
+To reduce state-space complexity:
+- Grouped board configurations into meta-states
+- Based on Mancala-specific heuristics (Divilly et al., 2013)
+- Priority ordering: H5 → H4 → H2 → H3
+
+#### Example Heuristics
+- Maximum stones on own side
+- Stone advantage over opponent
+- Rightmost pocket availability
+- Empty opponent pockets
+- Distance of stones from goal
+
+#### Results:
+- State aggregation only: ~60% win rate
+- With softmax + decay: ~72% win rate
+
+### 8. Reward Scaling Experiments
+
+#### Reward Clipping
+- Clipped rewards to [−1, 1]
+- Reduced win rate by ~4%
+- Suppressed meaningful action differentiation
+
+#### Reward Normalization
+- Scaled rewards proportionally
+- Slowed convergence
+- Reduced Q-value contrast
+
+Both approaches were rejected.
+
+---
+
+## Methodology
+
+The project follows a structured experimental pipeline:
+
+### 1. Environment Construction
+  - Full Mancala rule engine
+  - Legal action masking
+  - Terminal-based interaction
+### 2. Baseline Training
+  - Q-learning against random opponent
+  - Fixed exploration
+### 3. Ablation Studies
+  - Reward shaping
+  - Exploration decay
+  - Learning rate decay
+  - Action selection strategies
+### 4. State-Space Reduction
+  - Heuristic-based aggregation
+  - Meta-state learning
+### 5. Evaluation
+  - Multiple independent runs
+  - Win-rate tracking
+  - Moving average smoothing
+  - Variance analysis
+
+---
+
+## Reproducibility
+
+### Environment
 - Python 3.6+
 - NumPy
 - Matplotlib
 
-### Setup
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd "mancala reinforcement learning (python)"
+### Run
 ```
-
-2. Install dependencies:
-```bash
 pip install numpy matplotlib
-```
-
-## Quick Start
-
-### Train a New Agent
-
-```bash
-cd mancala
 python train_mancala_agent.py
-```
-
-This will:
-- Train 5 independent agents for 1,000,000 games each
-- Save checkpoints every 25,000 games
-- Generate performance plots and consistency analysis
-- Save trained models to the `model/` directory
-
-### Play Against the Agent
-
-```bash
-cd mancala
 python play_mancala.py
 ```
 
-Follow the prompts to:
-- Choose whether Player 1 is human or computer
-- Choose whether Player 2 is human or computer
-- Play the game by selecting pocket numbers
-
-## Project Structure
-
-```
-mancala-reinforcement-learning/
-├── mancala/
-│   ├── mancala.py              # Core game engine and board logic
-│   ├── agent.py                # Q-learning agent implementation
-│   ├── train_mancala_agent.py  # Training script with analysis
-│   ├── play_mancala.py         # Interactive gameplay interface
-│   └── tests/                  # Test files
-├── model/                      # Saved agent models (.pkl files)
-├── figures (softmax + rewards + parameter decays)/
-│   ├── Run1MovingAvg&WinRate.png
-│   ├── Run2MovingAvg&WinRate.png
-│   ├── ...
-│   └── consistency_plot.png
-├── ECS 170 Project Presentation.pdf
-├── README.md
-├── LICENSE
-└── CODE_OF_CONDUCT.md
-```
-
-## Algorithm Details
-
-### Q-Learning Implementation
-
-The agent uses **temporal difference Q-learning** with the following update rule:
-
-```
-Q(s, a) ← Q(s, a) + α[r + γ max Q(s', a') - Q(s, a)]
-```
-
-Where:
-- `α` (alpha): Learning rate (starts at 0.4, decays to 0.01)
-- `γ` (gamma): Discount factor (0.5)
-- `r`: Reward received
-- `s`: Current state
-- `a`: Action taken
-- `s'`: Next state
-
-### Hybrid Action Selection
-
-The agent uses a combination of **epsilon-greedy** and **softmax** strategies:
-
-1. **Epsilon-Greedy Component**: With probability ε, choose a random action (exploration)
-2. **Softmax Component**: Otherwise, select actions probabilistically based on Q-values:
-
-```
-P(a) = exp(Q(a)/T) / Σ exp(Q(a')/T)
-```
-
-Where `T` is the temperature parameter controlling exploration vs exploitation.
-
-### Parameter Decay
-
-All three key parameters decay over training:
-- **Epsilon**: 1.0 → 0.05 (decay rate: 0.999)
-- **Alpha**: 0.4 → 0.01 (decay rate: 0.999)
-- **Temperature**: 1.0 → 0.1 (decay rate: 0.999)
-
-This allows for high exploration early in training and exploitation of learned strategies later.
-
-## Training
-
-### Default Training Configuration
-
-```python
-train_agent(
-    n_games=1000000,              # Total games per run
-    games_per_checkpoint=25000,   # Save frequency
-    initial_epsilon=1.0,
-    min_epsilon=0.05,
-    epsilon_decay=0.999,
-    initial_alpha=0.4,
-    min_alpha=0.01,
-    alpha_decay=0.999,
-    initial_temperature=1.0,
-    min_temperature=0.1,
-    temperature_decay=0.999
-)
-```
-
-### Training Output
-
-The training script generates:
-- **5 trained agent models** saved as `.pkl` files
-- **Moving average plots** for each run showing outcome trends
-- **Win rate plots** tracking performance over time
-- **Consistency plot** comparing all 5 runs
-
-### Customizing Training
-
-Edit `train_mancala_agent.py` to modify:
-- Number of games
-- Checkpoint frequency
-- Decay rates and initial values
-- Reward structure
-
-## 🎲 Playing Against the Agent
-
-When running `play_mancala.py`:
-
-1. The game loads the trained agent from `model/mancala_agent.pkl`
-2. You'll be prompted to choose human or computer for each player
-3. The board is displayed with pocket numbers
-4. Enter the pocket number (0-5 for Player 1, 7-12 for Player 2) to make your move
-5. The game follows standard Mancala rules with captures and extra turns
-
-### Mancala Rules
-- Players take turns picking up all stones from one of their pockets
-- Stones are distributed counter-clockwise, one per pocket
-- If the last stone lands in your mancala, you get another turn
-- If the last stone lands in an empty pocket on your side, you capture that stone and all stones in the opposite pocket
-- The game ends when one side has no stones left
-- The player with the most stones in their mancala wins
-
-## Results
-
-The trained agent demonstrates:
-- Consistent learning across multiple independent runs
-- Improved win rates over training duration
-- Strategic play including captures and extra turn optimization
-- Competitive gameplay against human players
-
-See the `figures (softmax + rewards + parameter decays)/` directory for detailed performance visualizations.
-
-## 👥 Contributors
-
-This project was developed by a team of 8 students for ECS 170:
-
-- **Angelina Cottone**
-- **Nick Gomez**
-- **Harris Habib**
-- **Mythri Kulkarni**
-- **Aatish Lobo**
-- **Andrew Ortega**
-- **Shriya Rudrashetty**
-- **Alyssa Ann Toledo**
-
-### Branch Structure
-
-Each branch contains a specific team member's experimental adjustments to the baseline code. The `master` branch contains the final model with the complete reward system, all figures/plots, and presentation materials. See the Contributions section (Section 7) of the project report for detailed branch-to-contributor mapping.
-
-## License
-
-This project is licensed under the terms specified in the [LICENSE](LICENSE) file.
-
-## Code of Conduct
-
-Please review our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
+Outputs include:
+- Trained agent models
+- Moving average plots
+- Cross-run consistency analysis
 
 ---
 
-**Course**: ECS 170 - Artificial Intelligence
-**Project**: Mancala Reinforcement Learning Implementation
+## Project Structure
+```
+mancala-reinforcement-learning/
+│
+├── mancala/
+│   ├── mancala.py              # Game engine
+│   ├── agent.py                # Q-learning agent
+│   ├── train_mancala_agent.py  # Training & analysis
+│   ├── play_mancala.py         # Interactive gameplay
+│   └── tests/
+│   │   └── mancala_tests.py    # Script for tests
+├── figures/                    # Moving average, win rate, & consistency plots
+│   ├── Run1MovingAvg&WinRate.png
+│   ├── Run2MovingAvg&WinRate.png
+│   ├── Run3MovingAvg&WinRate.png
+│   ├── Run4MovingAvg&WinRate.png
+│   ├── Run5MovingAvg&WinRate.png
+│   └── consistency_plot.png
+├── CODE_OF_CONDUCT.md          # Contributor Code of Conduct
+├── ECS 170 Project Presentation  # Project Presentation
+├── README.md
+└── LICENSE
+```
+
+---
+
+## Ethical & Practical Considerations
+- Training against random agents limits realism
+- Learned policies may not reflect human strategies
+- Persistent exploration affects human gameplay
+- Results depend heavily on reward design choices
+
+---
+
+## Technologies Used
+- Python 3.6+
+- NumPy
+- Matplotlib
+- Pickle (model persistence)
+
+### Reinforcement Learning Concepts
+- Q-learning
+- Exploration-exploitation tradeoffs
+- Reward shaping
+- State abstraction
+- Bias-variance tradeoffs
+- Convergence analysis
+
+---
+
+## Author
+Developed by an 8-person team for ECS 170.
+
+**Angelina Cottone, Nick Gomez, Harris Habib, Mythri Kulkarni, Aatish Lobo, Andrew Ortega, Shriya Rudrashetty, Alyssa Ann Toledo**
+UC Davis, 2024
+
+---
+*Last Updated: January 2026*
