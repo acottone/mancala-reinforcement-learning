@@ -1,6 +1,6 @@
 # Mancala Reinforcement Learning
 
-A sophisticated implementation of the classic Mancala board game with an advanced Q-learning agent that uses a hybrid softmax + epsilon-greedy approach with parameter decay for optimal learning.
+Designing, training, and evaluating a reinforcement learning agent for the game of **Mancala** using Q-learning with hybrid exploration strategies and dynamic parameter decay.
 
 ## Overview
 
