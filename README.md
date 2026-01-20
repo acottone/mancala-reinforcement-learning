@@ -390,7 +390,9 @@ Developed by an 8-person team for ECS 170.
 
 ## References
 
-1. [Scaffolding](https://github.com/mkgray/mancala-reinforcement-learning)
+### Scaffolding
+
+- Mancala Reinforcement Learning: https://github.com/mkgray/mancala-reinforcement-learning
 
 ---
 *Last Updated: January 2026*
